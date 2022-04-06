@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd $(dirname $0)/..
-mkdir -p cache/urban data/urban
+mkdir -p cache/urban data/urban catalogs
 
 if ! [ -z "$2" ]; then
   count=$2
@@ -39,7 +39,7 @@ function querymetas {
   cat $1 | grep -i "^$2" | awk -F "|" '{print $2}' | sed 's/"/""/g' | sed 's/^/"/' | sed 's/$/"/'
 }
 
-echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > data/urban/catalog.csv
+echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > catalogs/urban.csv.tmp
 seq $pages |
  while read i; do
   echo "- Querying $count-books page $i/$pages..." 
@@ -70,6 +70,7 @@ seq $pages |
     pri=$(querymetas $output "Prix")
     vos=$(querymetas $output "Contenu")
 # TODO: add auteurs, description?
-    echo "  ===> $title;$ser;$col;$age;$dat;$pag;$ean;$vos;$pri;$bookurl" >> data/urban/catalog.csv
+    echo "$title;$ser;$col;$age;$dat;$pag;$ean;$vos;$pri;$bookurl" >> catalogs/urban.csv.tmp
    done
  done
+sort -u catalogs/urban.csv.tmp > catalog.urban.csv
