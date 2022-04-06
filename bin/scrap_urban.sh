@@ -1,7 +1,13 @@
 #!/bin/bash
 
 cd $(dirname $0)/..
-mkdir -p cache/urban data/urban catalogs
+
+editeur=urban
+
+cachedir="cache/$editeur"
+datadir="data/$editeur"
+catalog="catalogs/$editeur.csv"
+mkdir -p $cachedir $datadir catalogs
 
 if ! [ -z "$2" ]; then
   count=$2
@@ -17,8 +23,8 @@ if ! [ -z "$1" ]; then
 else
   echo "- Querying total number of books..."
   pages=$(curl -sL "$searchurl" --data-raw "${query}1" |
-           grep "class='page'"                 |
-           tail -1                             |
+           grep "class='page'"                         |
+           tail -1                                     |
            sed -r 's/^.*>([0-9]+)<.*$/\1/')
   echo "  -> $((pages * count))"
 fi
@@ -28,7 +34,7 @@ function escapeit {
 }
 
 function cachedcurl {
-  cache="cache/urban/"$(escapeit $1)
+  cache="$cachedir/"$(escapeit $1)
   if ! test -s $cache; then
     curl -sL "$1" > $cache
   fi
@@ -36,10 +42,15 @@ function cachedcurl {
 }
 
 function querymetas {
-  cat $1 | grep -i "^$2" | awk -F "|" '{print $2}' | sed 's/"/""/g' | sed 's/^\s*/"/' | sed 's/\s*$/"/'
+  cat $1                   |
+   grep -i "^$2"           |
+   awk -F "|" '{print $2}' |
+   sed 's/"/""/g'          |
+   sed 's/^\s*/"/'         |
+   sed 's/\s*$/"/'
 }
 
-rm -f data/urban/catalog.csv
+rm -f $datadir/catalog.csv
 seq $pages |
  while read i; do
   echo "- Querying $count-books page $i/$pages..." 
@@ -47,12 +58,12 @@ seq $pages |
    jq .content                                   |
    sed -r 's/(\\n)+/\n/g'                        |
    sed -r 's/(\\t|\s)+/ /g'                      |
-   sed -r 's/\\"/"/g' > cache/urban/catalog-p${i}.html
-  grep "EN SAVOIR PLUS" cache/urban/catalog-p${i}.html |
-   sed -r 's/^.*href="([^"]*)".*$/\1/'           |
+   sed -r 's/\\"/"/g' > $cachedir/catalog-p${i}.html
+  grep "EN SAVOIR PLUS" $cachedir/catalog-p${i}.html |
+   sed -r 's/^.*href="([^"]*)".*$/\1/'               |
    while read bookurl; do
     echo "  -> $bookurl"
-    output="data/"$(escapeit $bookurl)
+    output="$datadir/"$(escapeit $bookurl)
     cachedcurl "$bookurl"                                                                |
      python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]' |
      tr "\n" " "                                                                         |
@@ -77,9 +88,10 @@ seq $pages |
 # - add description?
 # - generate hash for future indexation
     if ! [ -z "$pri" ]; then
-      echo "$title;$ser;$col;$age;$dat;$pag;$ean;$vos;$pri;$bookurl" >> data/urban/catalog.csv
+      echo "$title;$ser;$col;$age;$dat;$pag;$ean;$vos;$pri;$bookurl" >> $datadir/catalog.csv
     fi
    done
  done
-echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > catalogs/urban.csv
-sort -u data/urban/catalog.csv >> catalogs/urban.csv
+echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > $catalog
+sort -u $datadir/catalog.csv >> $catalog
+
