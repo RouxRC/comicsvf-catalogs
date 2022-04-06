@@ -4,7 +4,7 @@ cd $(dirname $0)/..
 
 editeur=urban
 
-cachedir="cache/$editeur"
+cachedir=".cache/$editeur"
 datadir="data/$editeur"
 catalog="catalogs/$editeur.csv"
 mkdir -p $cachedir $datadir catalogs
