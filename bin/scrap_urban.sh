@@ -36,7 +36,7 @@ function cachedcurl {
 }
 
 function querymetas {
-  cat $1 | grep -i "^$2" | awk -F "|" '{print $2}' | sed 's/"/""/g' | sed 's/^/"/' | sed 's/$/"/'
+  cat $1 | grep -i "^$2" | awk -F "|" '{print $2}' | sed 's/"/""/g' | sed 's/^\s*/"/' | sed 's/\s*$/"/'
 }
 
 echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > catalogs/urban.csv.tmp
