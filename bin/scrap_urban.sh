@@ -67,6 +67,7 @@ seq $pages |
     cachedcurl "$bookurl"                                                                |
      python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]' |
      tr "\n" " "                                                                         |
+     sed -r 's/\r//g'                                                                    |
      sed -r 's/(<h1|<li[^>]*><b|<div class="[^"]*_album")/\n\1/g'                        |
      sed -r 's#</(h1|li|div)>#</\1>\n#g'                                                 |
      grep -P '(<h1|<li[^>]*><b|<div class="[^"]*_album")'                                |
