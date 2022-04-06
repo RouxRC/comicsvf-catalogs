@@ -72,7 +72,9 @@ seq $pages |
      sed -r 's#</(h1|li|div)>#</\1>\n#g'                                                 |
      grep -P '(<h1|<li[^>]*><b|<div class="[^"]*_album")'                                |
      sed -r 's/<[^>]+>//g'                                                               |
-     sed -r 's/^\s+//g'                                                                  |
+     sed -r 's/\s+/ /g'                                                                  |
+     sed -r 's/^\s//g'                                                                   |
+     sed -r 's/\s$//g'                                                                   |
      sed -r 's/\s*:\s*/|/' > $output
     #cat $output
     title='"'$(cat $output | head -1 | sed 's/"/""/g')'"'
@@ -87,6 +89,7 @@ seq $pages |
 # TODO:
 # - add auteurs
 # - add description?
+# - cleanup fields
 # - generate hash for future indexation
     if ! [ -z "$pri" ]; then
       echo "$title,$ser,$col,$age,$dat,$pag,$ean,$vos,$pri,$bookurl" >> $datadir/catalog.csv
