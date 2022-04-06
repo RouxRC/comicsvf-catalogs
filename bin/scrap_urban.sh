@@ -39,7 +39,7 @@ function querymetas {
   cat $1 | grep -i "^$2" | awk -F "|" '{print $2}' | sed 's/"/""/g' | sed 's/^\s*/"/' | sed 's/\s*$/"/'
 }
 
-echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > catalogs/urban.csv.tmp
+rm -f data/urban/catalog.csv
 seq $pages |
  while read i; do
   echo "- Querying $count-books page $i/$pages..." 
@@ -55,6 +55,9 @@ seq $pages |
     output="data/"$(escapeit $bookurl)
     cachedcurl "$bookurl"                                                                |
      python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]' |
+     tr "\n" " "                                                                         |
+     sed -r 's/(<h1|<li[^>]*><b|<div class="[^"]*_album")/\n\1/g'                        |
+     sed -r 's#</(h1|li|div)>#</\1>\n#g'                                                 |
      grep -P '(<h1|<li[^>]*><b|<div class="[^"]*_album")'                                |
      sed -r 's/<[^>]+>//g'                                                               |
      sed -r 's/^\s+//g'                                                                  |
@@ -69,8 +72,14 @@ seq $pages |
     ean=$(querymetas $output "EAN")
     pri=$(querymetas $output "Prix")
     vos=$(querymetas $output "Contenu")
-# TODO: add auteurs, description?
-    echo "$title;$ser;$col;$age;$dat;$pag;$ean;$vos;$pri;$bookurl" >> catalogs/urban.csv.tmp
+# TODO:
+# - add auteurs
+# - add description?
+# - generate hash for future indexation
+    if ! [ -z "$pri" ]; then
+      echo "$title;$ser;$col;$age;$dat;$pag;$ean;$vos;$pri;$bookurl" >> data/urban/catalog.csv
+    fi
    done
  done
-sort -u catalogs/urban.csv.tmp > catalog.urban.csv
+echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > catalogs/urban.csv
+sort -u data/urban/catalog.csv >> catalogs/urban.csv
