@@ -89,10 +89,10 @@ seq $pages |
 # - add description?
 # - generate hash for future indexation
     if ! [ -z "$pri" ]; then
-      echo "$title;$ser;$col;$age;$dat;$pag;$ean;$vos;$pri;$bookurl" >> $datadir/catalog.csv
+      echo "$title,$ser,$col,$age,$dat,$pag,$ean,$vos,$pri,$bookurl" >> $datadir/catalog.csv
     fi
    done
  done
-echo "titre;série;collection;âge;date;pages;EAN;contenu VO;prix;url" > $catalog
+echo "titre,série,collection,âge,date,pages,EAN,contenu VO,prix,url" > $catalog
 sort -u $datadir/catalog.csv >> $catalog
 
