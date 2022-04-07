@@ -54,11 +54,14 @@ rm -f $datadir/catalog.csv
 seq $pages |
  while read i; do
   echo "- Querying $count-books page $i/$pages..." 
-  curl -sL $searchurl --data-raw "${query}${i}"  |
-   jq .content                                   |
-   sed -r 's/(\\n)+/\n/g'                        |
-   sed -r 's/(\\t|\s)+/ /g'                      |
-   sed -r 's/\\"/"/g' > $cachedir/catalog-p${i}.html
+  if [ -z "$1" ] || ! test -s $cachedir/catalog-p${i}.html; then
+    curl -sL $searchurl --data-raw "${query}${i}"  |
+     jq .content                                   |
+     sed -r 's/(\\n)+/\n/g'                        |
+     sed -r 's/(\\t|\s)+/ /g'                      |
+     sed -r 's/\\"/"/g' > $cachedir/catalog-p${i}.html.tmp
+    mv $cachedir/catalog-p${i}.html{.tmp,}
+  fi
   grep "EN SAVOIR PLUS" $cachedir/catalog-p${i}.html |
    sed -r 's/^.*href="([^"]*)".*$/\1/'               |
    while read bookurl; do
