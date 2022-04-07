@@ -81,15 +81,32 @@ seq $pages |
     age=$(querymetas $output "[AÂ]ge")
     col=$(querymetas $output "Collection")
     ser=$(querymetas $output "S[eé]rie")
-    dat=$(querymetas $output "Date")
-    pag=$(querymetas $output "Pag")
+    dat=$(querymetas $output "Date" |
+      sed 's/janvier/01/'           |
+      sed 's/février/02/'           |
+      sed 's/mars/03/'              |
+      sed 's/avril/04/'             |
+      sed 's/mai/05/'               |
+      sed 's/juin/06/'              |
+      sed 's/juillet/07/'           |
+      sed 's/août/08/'              |
+      sed 's/septembre/09/'         |
+      sed 's/octobre/10/'           |
+      sed 's/novembre/11/'          |
+      sed 's/décembre/12/'          |
+      sed -r 's/([0-9]+) ([0-9]+) ([0-9]+)/\3-\2-\1/')
+    pag=$(querymetas $output "Pag"  |
+      sed 's/ pages//')
     ean=$(querymetas $output "EAN")
-    pri=$(querymetas $output "Prix")
+    pri=$(querymetas $output "Prix" |
+      sed 's/ €//'                  |
+      sed -r 's/(\..)$/\10/'        |
+      sed -r 's/^([0-9]+)$/\1.00/')
     vos=$(querymetas $output "Contenu")
 # TODO:
 # - add auteurs
+# - cleanup contenu VO
 # - add description?
-# - cleanup fields
 # - generate hash for future indexation
     if ! [ -z "$pri" ]; then
       echo "$title,$ser,$col,$age,$dat,$pag,$ean,$vos,$pri,$bookurl" >> $datadir/catalog.csv
