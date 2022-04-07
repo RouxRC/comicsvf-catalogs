@@ -79,8 +79,14 @@ seq $pages |
     #cat $output
     title='"'$(cat $output | head -1 | sed 's/"/""/g')'"'
     age=$(querymetas $output "[AÂ]ge")
-    col=$(querymetas $output "Collection")
-    ser=$(querymetas $output "S[eé]rie")
+    col=$(querymetas $output "Collection"       |
+      sed -r 's/([A-Z])([A-Z]+( |$))/\1\L\2/g'  |
+      sed 's/Dc /DC /')
+    ser=$(querymetas $output "S[eé]rie"         |
+      sed -r "s/([A-Z])([A-Z]+('S|[ ).'\-]|$))/\1\L\2/g"  |
+      sed -r 's/(^| )(Dc|Dvd|Brd|Tv|Ii+)( |$)/\1\U\2\3/'  |
+      sed 's/Amere/Amère/'                                |
+      sed 's/ Of / of /')
     dat=$(querymetas $output "Date" |
       sed 's/janvier/01/'           |
       sed 's/février/02/'           |
@@ -100,13 +106,14 @@ seq $pages |
     ean=$(querymetas $output "EAN")
     pri=$(querymetas $output "Prix" |
       sed 's/ €//'                  |
-      sed -r 's/(\..)$/\10/'        |
-      sed -r 's/^([0-9]+)$/\1.00/')
+      sed -r 's/(\..)"$/\10"/'        |
+      sed -r 's/^("[0-9]+)"$/\1.00"/')
     vos=$(querymetas $output "Contenu")
 # TODO:
 # - add auteurs
 # - cleanup contenu VO
 # - add description?
+# - find missing (link?)
 # - generate hash for future indexation
     if ! [ -z "$pri" ]; then
       echo "$title,$ser,$col,$age,$dat,$pag,$ean,$vos,$pri,$bookurl" >> $datadir/catalog.csv
