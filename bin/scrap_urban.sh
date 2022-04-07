@@ -80,12 +80,12 @@ seq $pages |
     title='"'$(cat $output | head -1 | sed 's/"/""/g')'"'
     age=$(querymetas $output "[AÂ]ge")
     col=$(querymetas $output "Collection"       |
-      sed -r 's/([A-Z])([A-Z]+( |$))/\1\L\2/g'  |
+      sed -r 's/([A-Z])([A-Z]+([ "]))/\1\L\2/g' |
       sed 's/Dc /DC /')
-    ser=$(querymetas $output "S[eé]rie"         |
-      sed -r "s/([A-Z])([A-Z]+('S|[ ).'\-]|$))/\1\L\2/g"  |
-      sed -r 's/(^| )(Dc|Dvd|Brd|Tv|Ii+)( |$)/\1\U\2\3/'  |
-      sed 's/Amere/Amère/'                                |
+    ser=$(querymetas $output "S[eé]rie"                    |
+      sed -r "s/([A-Z])([A-Z]+('S|[ ).\"\-]))/\1\L\2/g"    |
+      sed -r 's/([" ])(Dc|Dvd|Brd|Tv|Ii+)([" ])/\1\U\2\3/' |
+      sed 's/Amere/Amère/'                                 |
       sed 's/ Of / of /')
     dat=$(querymetas $output "Date" |
       sed 's/janvier/01/'           |
@@ -106,8 +106,8 @@ seq $pages |
     ean=$(querymetas $output "EAN")
     pri=$(querymetas $output "Prix" |
       sed 's/ €//'                  |
-      sed -r 's/(\..)"$/\10"/'        |
-      sed -r 's/^("[0-9]+)"$/\1.00"/')
+      sed -r 's/(\..)"/\10"/'       |
+      sed -r 's/("[0-9]+)"/\1.00"/')
     vos=$(querymetas $output "Contenu")
 # TODO:
 # - add auteurs
