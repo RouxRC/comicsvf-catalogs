@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # TODO:
-# - add auteurs
-# - add cover url
 # - grab missing VO from descriptions ex: https://www.urban-comics.com/superman-univers-3/
 # - cleanup contenu VO
+# - clean auteurs
 # - add description?
-# - find missing (link?)
+# - find missing (urban link?)
 # - generate hash for future indexation
 
 requiredpages=$1
@@ -55,7 +54,7 @@ function cachedcurl {
 
 function querymetas {
   cat $1                   |
-   grep -i "^$2[^:]*:"     |
+   grep -iP "^($2)[^:]*:"  |
    sed -r 's/^[^:]*:\s*//' |
    sed 's/"/""/g'          |
    sed 's/^\s*/"/'         |
@@ -65,12 +64,12 @@ function querymetas {
 function lowerize {
  cat                                                           |
  sed -r "s/([A-Z])([A-Z]+($|'S|[ ).\":?\!,;\/\#\-]))/\1\L\2/g" |
- sed -r 's/(^|[" ])(Dc|Dvd|Brd|Tv|Ii+)([" ]|$)/\1\U\2\3/'      |
+ sed -r 's/(^|[" ])(Dc|Dvd|Brd|Tv|I[iv]+)([" ]|$)/\1\U\2\3/'   |
  sed 's/Amere/Amère/'                                          |
  sed 's/ Of / of /'
 }
 
-echo "collection,série,titre,date,pages,prix,âge,contenu VO,EAN,url" > $datadir/catalog.csv
+echo "collection,série,titre,date,pages,prix,âge,scenario,dessin,contenu VO,EAN,url,url cover" > $datadir/catalog.csv
 seq $pages | while read i; do
   echo "- Processing $count-books page $i/$pages..." 
 
@@ -90,19 +89,29 @@ seq $pages | while read i; do
     echo "  -> $bookurl"
 
     output="$datadir/"$(escapeit $bookurl)
-    cachedcurl "$bookurl"                                                                |
-     python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]' |
-     tr "\n" " "                                                                         |
-     sed -r 's/\r//g'                                                                    |
-     sed -r 's/(<h1|<li[^>]*><b|<div class="[^"]*_album")/\n\1/g'                        |
-     sed -r 's#</(h1|li|div)>#</\1>\n#g'                                                 |
-     grep -P '(<h1|<li[^>]*><b|<div class="[^"]*_album")'                                |
-     sed -r 's/<[^>]+>//g'                                                               |
-     sed -r 's/\s+/ /g'                                                                  |
-     sed -r 's/^\s//g'                                                                   |
+    cachedcurl "$bookurl"                                                                                           |
+     python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]'                            |
+     tr "\n" " "                                                                                                    |
+     sed -r 's/\r//g'                                                                                               |
+     sed -r 's/(<h[15]|<li[^>]*><b|<div class="[^"]*_album"|<img)/\n\1/g'                                           |
+     sed -r 's#</(h[15]|li|div)>#</\1>\n#g'                                                                         |
+     grep -P '(<h1|<h5 class="authors"|<li[^>]*><b|<div class="[^"]*_album"|<img class="[^"]*single-product-cover)' |
+     sed -r 's/(<h1[^>]*>)/Titre : \1/'                                                                             |
+     sed -r 's/^.*<img[^>]*src="([^"]*)"[^>]*>.*$/Cover : \1/'                                                      |
+     sed -r 's/<[^>]+>//g'                                                                                          |
+     sed -r 's/\s+/ /g'                                                                                             |
+     sed -r 's/^\s//g'                                                                                              |
      sed -r 's/\s$//g' > $output
 
-    tit='"'$(cat $output | head -1 | lowerize | sed 's/"/""/g')'"'
+    tit=$(querymetas $output "Titre" | lowerize)
+
+    cov=$(querymetas $output "Cover")
+
+    scn=$(querymetas $output "sc[eé]nariste" |
+     sed 's/[ \-]*dessinateur[s :]*.*"$/"/'| lowerize)
+
+    des=$(querymetas $output "sc[eé]nariste|dessinateur" |
+     sed 's/^".*dessinateur[s :]*/"/' | lowerize)
 
     age=$(querymetas $output "[AÂ]ge")
 
@@ -139,7 +148,7 @@ seq $pages | while read i; do
      sed 's/^Contenu\s*:\s*//')
 
     if ! [ -z "$pri" ]; then
-      echo "$col,$ser,$tit,$dat,$pag,$pri,$age,$vos,$ean,$bookurl" >> $datadir/catalog.csv
+      echo "$col,$ser,$tit,$dat,$pag,$pri,$age,$scn,$des,$vos,$ean,$bookurl,$cov" >> $datadir/catalog.csv
     fi
    done
  done
