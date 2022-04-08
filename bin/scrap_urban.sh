@@ -54,10 +54,18 @@ function cachedcurl {
 function querymetas {
   cat $1                   |
    grep -i "^$2"           |
-   awk -F "|" '{print $2}' |
+   sed -r 's/^.*:\s*//'    |
    sed 's/"/""/g'          |
    sed 's/^\s*/"/'         |
    sed 's/\s*$/"/'
+}
+
+function lowerize {
+ cat                                                         |
+ sed -r "s/([A-Z])([A-Z]+('S|[ ).\":?\!,;\/\#\-]))/\1\L\2/g" |
+ sed -r 's/([" ])(Dc|Dvd|Brd|Tv|Ii+)([" ])/\1\U\2\3/'        |
+ sed 's/Amere/Amère/'                                        |
+ sed 's/ Of / of /'
 }
 
 rm -f $datadir/catalog.csv
@@ -90,48 +98,41 @@ seq $pages | while read i; do
      sed -r 's/<[^>]+>//g'                                                               |
      sed -r 's/\s+/ /g'                                                                  |
      sed -r 's/^\s//g'                                                                   |
-     sed -r 's/\s$//g'                                                                   |
-     sed -r 's/\s*:\s*/|/' > $output
+     sed -r 's/\s$//g' > $output
 
-    tit='"'$(cat $output | head -1 | sed 's/"/""/g')'"'
+    tit='"'$(cat $output | head -1 | lowerize | sed 's/"/""/g')'"'
 
     age=$(querymetas $output "[AÂ]ge")
 
-    col=$(querymetas $output "Collection"       |
-      sed -r 's/([A-Z])([A-Z]+([ "]))/\1\L\2/g' |
-      sed 's/Dc /DC /')
+    col=$(querymetas $output "Collection" | lowerize)
 
-    ser=$(querymetas $output "S[eé]rie"                    |
-      sed -r "s/([A-Z])([A-Z]+('S|[ ).\"\-]))/\1\L\2/g"    |
-      sed -r 's/([" ])(Dc|Dvd|Brd|Tv|Ii+)([" ])/\1\U\2\3/' |
-      sed 's/Amere/Amère/'                                 |
-      sed 's/ Of / of /')
+    ser=$(querymetas $output "S[eé]rie" | lowerize)
 
     dat=$(querymetas $output "Date" |
-      sed 's/janvier/01/'           |
-      sed 's/février/02/'           |
-      sed 's/mars/03/'              |
-      sed 's/avril/04/'             |
-      sed 's/mai/05/'               |
-      sed 's/juin/06/'              |
-      sed 's/juillet/07/'           |
-      sed 's/août/08/'              |
-      sed 's/septembre/09/'         |
-      sed 's/octobre/10/'           |
-      sed 's/novembre/11/'          |
-      sed 's/décembre/12/'          |
-      sed -r 's/([0-9]+) ([0-9]+) ([0-9]+)/\3-\2-\1/')
+     sed 's/janvier/01/'            |
+     sed 's/février/02/'            |
+     sed 's/mars/03/'               |
+     sed 's/avril/04/'              |
+     sed 's/mai/05/'                |
+     sed 's/juin/06/'               |
+     sed 's/juillet/07/'            |
+     sed 's/août/08/'               |
+     sed 's/septembre/09/'          |
+     sed 's/octobre/10/'            |
+     sed 's/novembre/11/'           |
+     sed 's/décembre/12/'           |
+     sed -r 's/([0-9]+) ([0-9]+) ([0-9]+)/\3-\2-\1/')
 
     pag=$(querymetas $output "Pag"  |
-      sed 's/ pages//')
+     sed 's/ pages//')
 
     ean=$(querymetas $output "EAN")
 
     pri=$(querymetas $output "Prix" |
-      sed 's/ €//'                  |
-      sed -r 's/(\..)"/\10"/'       |
-      sed -r 's/("[0-9]+)"/\1.00"/')
-    vos=$(querymetas $output "Contenu")
+     sed 's/ €//'                   |
+     sed -r 's/(\..)"/\10"/'        |
+     sed -r 's/("[0-9]+)"/\1.00"/')
+    vos=$(querymetas $output "Contenu" | lowerize)
 
     if ! [ -z "$pri" ]; then
       echo "$col,$ser,$tit,$dat,$pag,$pri,$age,$vos,$ean,$bookurl" >> $datadir/catalog.csv
