@@ -68,7 +68,7 @@ function lowerize {
  sed 's/ Of / of /'
 }
 
-rm -f $datadir/catalog.csv
+echo "collection,série,titre,date,pages,prix,âge,contenu VO,EAN,url" > $datadir/catalog.csv
 seq $pages | while read i; do
   echo "- Processing $count-books page $i/$pages..." 
 
@@ -140,6 +140,5 @@ seq $pages | while read i; do
    done
  done
 
-echo "collection,série,titre,date,pages,prix,âge,contenu VO,EAN,url" > $catalog
-sort -u $datadir/catalog.csv >> $catalog
+xsv sort -s collection,série,date,titre $datadir/catalog.csv > $catalog
 
