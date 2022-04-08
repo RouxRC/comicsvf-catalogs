@@ -53,18 +53,18 @@ function cachedcurl {
 
 function querymetas {
   cat $1                   |
-   grep -i "^$2"           |
-   sed -r 's/^.*:\s*//'    |
+   grep -i "^$2[^:]*:"     |
+   sed -r 's/^[^:]*:\s*//' |
    sed 's/"/""/g'          |
    sed 's/^\s*/"/'         |
    sed 's/\s*$/"/'
 }
 
 function lowerize {
- cat                                                         |
- sed -r "s/([A-Z])([A-Z]+('S|[ ).\":?\!,;\/\#\-]))/\1\L\2/g" |
- sed -r 's/([" ])(Dc|Dvd|Brd|Tv|Ii+)([" ])/\1\U\2\3/'        |
- sed 's/Amere/Amère/'                                        |
+ cat                                                           |
+ sed -r "s/([A-Z])([A-Z]+($|'S|[ ).\":?\!,;\/\#\-]))/\1\L\2/g" |
+ sed -r 's/(^|[" ])(Dc|Dvd|Brd|Tv|Ii+)([" ]|$)/\1\U\2\3/'      |
+ sed 's/Amere/Amère/'                                          |
  sed 's/ Of / of /'
 }
 
@@ -124,6 +124,7 @@ seq $pages | while read i; do
      sed -r 's/([0-9]+) ([0-9]+) ([0-9]+)/\3-\2-\1/')
 
     pag=$(querymetas $output "Pag"  |
+     sed 's/"0 page"/""/'           |
      sed 's/ pages//')
 
     ean=$(querymetas $output "EAN")
