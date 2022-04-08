@@ -2,6 +2,8 @@
 
 # TODO:
 # - add auteurs
+# - add cover url
+# - grab missing VO from descriptions ex: https://www.urban-comics.com/superman-univers-3/
 # - cleanup contenu VO
 # - add description?
 # - find missing (link?)
@@ -133,7 +135,8 @@ seq $pages | while read i; do
      sed 's/ €//'                   |
      sed -r 's/(\..)"/\10"/'        |
      sed -r 's/("[0-9]+)"/\1.00"/')
-    vos=$(querymetas $output "Contenu" | lowerize)
+    vos=$(querymetas $output "Contenu" | lowerize |
+     sed 's/^Contenu\s*:\s*//')
 
     if ! [ -z "$pri" ]; then
       echo "$col,$ser,$tit,$dat,$pag,$pri,$age,$vos,$ean,$bookurl" >> $datadir/catalog.csv
