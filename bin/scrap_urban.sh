@@ -62,10 +62,10 @@ function querymetas {
 }
 
 function lowerize {
- cat                                                           |
- sed -r "s/([A-Z])([A-Z]+($|'S|[ ).\":?\!,;\/\#\-]))/\1\L\2/g" |
- sed -r 's/(^|[" ])(Dc|Dvd|Brd|Tv|I[iv]+)([" ]|$)/\1\U\2\3/'   |
- sed 's/Amere/Amère/'                                          |
+ cat                                                            |
+ sed -r "s/([A-Z])([A-Z]+($|'S|[ ).,;\":?\!\/\#\-]))/\1\L\2/g"  |
+ sed -r 's/(^|[" ])(Dc|Dvd|Brd|Tv|I[iv]+)([" .,;]|$)/\1\U\2\3/' |
+ sed 's/Amere/Amère/'                                           |
  sed 's/ Of / of /'
 }
 
@@ -93,6 +93,7 @@ seq $pages | while read i; do
      python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]'                            |
      tr "\n" " "                                                                                                    |
      sed -r 's/\r//g'                                                                                               |
+     sed -r "s/’/'/g"                                                                                               |
      sed -r 's/(<h[15]|<li[^>]*><b|<div class="[^"]*_album"|<img)/\n\1/g'                                           |
      sed -r 's#</(h[15]|li|div)>#</\1>\n#g'                                                                         |
      grep -P '(<h1|<h5 class="authors"|<li[^>]*><b|<div class="[^"]*_album"|<img class="[^"]*single-product-cover)' |
@@ -103,21 +104,27 @@ seq $pages | while read i; do
      sed -r 's/^\s//g'                                                                                              |
      sed -r 's/\s$//g' > $output
 
-    tit=$(querymetas $output "Titre" | lowerize)
-
     cov=$(querymetas $output "Cover")
-
-    scn=$(querymetas $output "sc[eé]nariste" |
-     sed 's/[ \-]*dessinateur[s :]*.*"$/"/'| lowerize)
-
-    des=$(querymetas $output "sc[eé]nariste|dessinateur" |
-     sed 's/^".*dessinateur[s :]*/"/' | lowerize)
 
     age=$(querymetas $output "[AÂ]ge")
 
-    col=$(querymetas $output "Collection" | lowerize)
+    tit=$(querymetas $output "Titre"        | lowerize)
 
-    ser=$(querymetas $output "S[eé]rie" | lowerize)
+    scn=$(querymetas $output "sc[eé]nariste"|
+     sed 's/[ \-]*dessinateur[s :]*.*"$/"/' |
+     sed 's/\s*,\s*/|/g'                    | lowerize)
+
+    des=$(querymetas $output "sc[eé]nariste|dessinateur" |
+     sed 's/^".*dessinateur[s :]*/"/'       |
+     sed 's/, jr\./ Jr/g'                   |
+     sed 's/\s*,\s*/|/g'                    | lowerize)
+
+    col=$(querymetas $output "Collection"   | lowerize)
+
+    ser=$(querymetas $output "S[eé]rie"     | lowerize)
+
+    vos=$(querymetas $output "Contenu"      |
+     sed -r 's/^\(?Cont(enu|ient)[ :]*//'   | lowerize)
 
     dat=$(querymetas $output "Date" |
      sed 's/janvier/01/'            |
@@ -138,14 +145,12 @@ seq $pages | while read i; do
      sed 's/"0 page"/""/'           |
      sed 's/ pages//')
 
-    ean=$(querymetas $output "EAN")
-
     pri=$(querymetas $output "Prix" |
      sed 's/ €//'                   |
      sed -r 's/(\..)"/\10"/'        |
      sed -r 's/("[0-9]+)"/\1.00"/')
-    vos=$(querymetas $output "Contenu" | lowerize |
-     sed 's/^Contenu\s*:\s*//')
+
+    ean=$(querymetas $output "EAN")
 
     if ! [ -z "$pri" ]; then
       echo "$col,$ser,$tit,$dat,$pag,$pri,$age,$scn,$des,$vos,$ean,$bookurl,$cov" >> $datadir/catalog.csv
